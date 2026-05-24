@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings
 from pydantic import computed_field
 import os
+from datetime import timedelta
 
 # 这是一个Pydantic配置类，用于管理HR系统的数据库连接配置。
 
@@ -20,6 +21,11 @@ class Settings(BaseSettings):
     DB_HOST: str = "127.0.0.1"
     DB_PORT: int = 5432
     DB_NAME: str = "hr_system"
+    JWT_SECRET_KEY: str = "sfsdfsadfsdfjgafsd"
+    # access_token：一般是2个小时过期
+    # refresh_token：30天过期
+    JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(days=365)
+    JWT_REFRESH_TOKEN_EXPIRES: timedelta = timedelta(days=365)
 
     @computed_field  # @computed_field - Pydantic 专用装饰器
     # 作用：这是 Pydantic v2+ 引入的装饰器，用于在 Pydantic 模型中定义计算字段。

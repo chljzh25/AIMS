@@ -6,6 +6,9 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import func
 
 
+# 负责用户和部门数据的持久化操作
+# 继承自 BaseRepo，使用 SQLAlchemy 异步 ORM 进行数据库操作
+
 class UserRepo(BaseRepo):
     async def create_user(self, user_data: dict) -> UserModel:
         user = UserModel(**user_data)
