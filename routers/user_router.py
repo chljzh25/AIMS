@@ -19,7 +19,7 @@ async def login(
     # 开启事务
     async with session.begin():
         # 1. 获取用户
-        user_repo = UserRepo(session)
+        user_repo = UserRepo(session)  # 从依赖注入中获取UserRepo实例
         user: UserModel = await user_repo.get_by_email(str(login_data.email))
         if not user:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="该用户不存在！")

@@ -35,6 +35,19 @@ engine = create_async_engine(
 )
 
 # 创建异步会话工厂
+"""
+工厂模式的重要性
+如果没有工厂模式会怎样？
+错误的方式 - 直接使用单个实例
+如果这样做，所有HTTP请求会共享同一个数据库会话
+这会导致严重的并发问题和数据污染
+
+工厂模式的好处：
+并发安全：每个HTTP请求获得独立的会话实例
+资源管理：每个会话可以独立开启和关闭
+事务隔离：每个请求的事务相互独立
+内存管理：避免会话实例累积导致内存泄漏
+"""
 AsyncSessionFactory = sessionmaker(
     # 绑定到异步引擎 Engine或者其子类对象（这里是AsyncEngine）
     bind=engine,
@@ -70,7 +83,7 @@ class Base(DeclarativeBase):
 # 定义抽象基础模型 BaseModel
 class BaseModel(Base):
     """
-    计意图：
+    设计意图：
     字段	    作用	    设计考量
     id	        主键	    使用短UUID而非自增ID，避免ID泄露业务数据
     created_at	创建时间	    记录记录创建时刻
@@ -78,6 +91,14 @@ class BaseModel(Base):
     """
     __abstract__ = True
 
+    """
+    Mapped 是 SQLAlchemy 2.0 引入的类型提示机制，用于在 ORM 模型中明确指定列的类型。
+    具体功能：
+    类型注解：Mapped[str] 表明这个字段在 Python 中是一个字符串类型
+    ORM 映射：告诉 SQLAlchemy 这是一个数据库列的映射
+    静态分析支持：IDE 和类型检查器可以更好地理解代码结构
+    更好的开发体验：提供更好的代码补全和错误检测
+    """
     id: Mapped[str] = mapped_column(String(100), primary_key=True, default=lambda: uuid())
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
