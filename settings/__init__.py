@@ -36,6 +36,22 @@ class Settings(BaseSettings):
     # 邀请码过期时间
     INVITE_CODE_EXPIRE: int = 60 * 60 * 24 * 2
 
+    # 邮箱相关的配置
+    MAIL_USERNAME: str = Field(..., validation_alias="MAIL_USERNAME")
+    MAIL_PASSWORD: str = Field(..., validation_alias="MAIL_PASSWORD")
+    MAIL_FROM: str = Field(..., validation_alias="MAIL_USERNAME")
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.qq.com"
+    MAIL_FROM_NAME: str = "chljzh"
+    MAIL_STARTTLS: bool = True
+    MAIL_SSL_TLS: bool = False
+
+    # 邮箱机器人配置
+    EMAIL_BOT_IMAP_HOST: str = "imap.qq.com"
+    EMAIL_BOT_SMTP_HOST: str = "smtp.qq.com"
+    EMAIL_BOT_EMAIL: str = Field(..., validation_alias="MAIL_USERNAME")
+    EMAIL_BOT_PASSWORD: str = Field(..., validation_alias="MAIL_PASSWORD")
+
     @computed_field  # @computed_field - Pydantic 专用装饰器
     # 作用：这是 Pydantic v2+ 引入的装饰器，用于在 Pydantic 模型中定义计算字段。
     # 专门为 Pydantic 模型设计
