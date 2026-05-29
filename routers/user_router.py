@@ -3,7 +3,9 @@ from schemas.user_schema import (
     UserLoginSchema,
     UserLoginRespSchema,
     UserInviteSchema,
-    UserRegisterSchema)
+    UserRegisterSchema,
+    UserListRespSchema,
+)
 from dependencies import get_session_instance, get_auth_handler, AuthHandler, get_cache_instance, get_super_user
 from models import AsyncSession
 from repository.user_repo import UserRepo, DepartmentRepo
@@ -118,7 +120,6 @@ async def register(
         # 3. 校验邮箱是否已经注册
         """
         邮箱验证：检查邮箱是否已注册
-        邮箱验证：检查邮箱是否已注册
         创建用户：使用从缓存获取的部门ID创建用户账户
         数据完整性：整个过程在事务中，确保数据一致性
         """
@@ -135,3 +136,18 @@ async def register(
             "department_id": invite_info.department_id,
         })
     return ResponseSchema()
+
+
+@router.get("/list", summary="获取员工列表", response_model=UserListRespSchema)
+async def user_list(
+        page: int = 1,
+        size: int = 10,
+        department_id: str | None = None,
+        _: UserModel = Depends(get_super_user),
+        session: AsyncSession = Depends(get_session_instance),
+):
+    async with session.begin():
+        user_repo = UserRepo(session)
+        users = await user_repo.get_user_list(page=page, size=size, department_id=department_id)
+        total = await user_repo.get_user_count(department_id=department_id)
+    return {"users": users, "total": total}
