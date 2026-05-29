@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings
-from pydantic import computed_field
+from pydantic import computed_field, Field
 import os
 from datetime import timedelta
 
@@ -21,11 +21,20 @@ class Settings(BaseSettings):
     DB_HOST: str = "127.0.0.1"
     DB_PORT: int = 5432
     DB_NAME: str = "hr_system"
+
+    # JWT配置
     JWT_SECRET_KEY: str = "sfsdfsadfsdfjgafsd"
     # access_token：一般是2个小时过期
     # refresh_token：30天过期
     JWT_ACCESS_TOKEN_EXPIRES: timedelta = timedelta(days=365)
     JWT_REFRESH_TOKEN_EXPIRES: timedelta = timedelta(days=365)
+
+    # redis配置
+    REDIS_HOST: str = Field('127.0.0.1', validation_alias="REDIS_HOST")
+    REDIS_PORT: int = Field(6389, validation_alias="REDIS_PORT")
+
+    # 邀请码过期时间
+    INVITE_CODE_EXPIRE: int = 60 * 60 * 24 * 2
 
     @computed_field  # @computed_field - Pydantic 专用装饰器
     # 作用：这是 Pydantic v2+ 引入的装饰器，用于在 Pydantic 模型中定义计算字段。

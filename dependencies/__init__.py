@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 
 from models.user import UserModel, UserStatus
 from repository.user_repo import UserRepo
+from core.cache import HRCache
 
 
 async def get_session_instance():
@@ -48,7 +49,7 @@ AuthHandler本身使用单例模式实现，这里进一步确保只有一个实
 auth_handler = AuthHandler()
 
 
-# 依赖注入函数
+# 获取认证处理器实例
 async def get_auth_handler():
     """
     目的：为FastAPI提供一个依赖注入函数
@@ -97,3 +98,8 @@ async def get_super_user(
         return current_user
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足，无法访问！")
+
+
+# 获取缓存实例
+def get_cache_instance():
+    return HRCache()
