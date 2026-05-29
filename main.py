@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from routers.user_router import router as user_router
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from redis import asyncio as aioredis
+import redis.asyncio as aioredis  # 为现代 Redis 库更新的导入
 from settings import settings
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache import FastAPICache
@@ -34,6 +34,9 @@ async def lifespan(_: FastAPI):
         f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
         encoding="utf-8",
         decode_responses=True,
+        # 连接的 Redis 服务器版本太旧，不支持 HELLO 命令。现代的 Redis 客户端库期望连接到 Redis 6.0 或更高版本，
+        # 而您当前的 Redis 服务器可能是较早的版本
+        protocol=2  # 明确指定使用 RESP2 协议
     )
     cache_backend = RedisBackend(redis_client)
     FastAPICache.init(cache_backend, prefix="fastapi-cache")

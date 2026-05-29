@@ -13,7 +13,7 @@ dependencies = [
     "decorator==5.3.1",
     "distro==1.9.0",
     "executing==2.2.1",
-    "fastapi-cache2[redis]>=0.1.8",
+    "fastapi-cache2-fork>=0.3.0", # 使用兼容 Python 3.13 的分叉版本
     "fastapi-cloud-cli==0.17.1",
     "fastapi-mail>=1.6.4",
     "fastar==0.11.0",
@@ -57,7 +57,7 @@ dependencies = [
     "pyjwt>=2.13.0",
     "python-dateutil==2.9.0.post0",
     "pyzmq==27.1.0",
-    "redis>=8.0.0",
+    "redis>=5.0.0", # 现代 Redis 客户端，兼容 Python 3.13
     "regex==2026.5.9",
     "requests==2.34.1",
     "requests-toolbelt==1.0.0",
