@@ -5,6 +5,7 @@ from schemas.user_schema import (
     UserInviteSchema,
     UserRegisterSchema,
     UserListRespSchema,
+    UserStatusUpdateSchema,
 )
 from dependencies import get_session_instance, get_auth_handler, AuthHandler, get_cache_instance, get_super_user
 from models import AsyncSession
@@ -138,6 +139,7 @@ async def register(
     return ResponseSchema()
 
 
+# 获取员工列表
 @router.get("/list", summary="获取员工列表", response_model=UserListRespSchema)
 async def user_list(
         page: int = 1,
@@ -151,3 +153,21 @@ async def user_list(
         users = await user_repo.get_user_list(page=page, size=size, department_id=department_id)
         total = await user_repo.get_user_count(department_id=department_id)
     return {"users": users, "total": total}
+
+
+# 修改员工状态
+@router.patch("/status/update", summary="修改员工状态", response_model=ResponseSchema)
+async def update_status(
+        status_data: UserStatusUpdateSchema,
+        session: AsyncSession = Depends(get_session_instance),
+        _: UserModel = Depends(get_super_user),
+):
+    async with session.begin():
+        user_repo = UserRepo(session)
+        user: UserModel = await user_repo.get_by_id(status_data.user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该员工不存在！")
+        if user.is_superuser:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能修改超级用户的状态！")
+        user.status = status_data.status
+    return ResponseSchema()
