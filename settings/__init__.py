@@ -52,6 +52,14 @@ class Settings(BaseSettings):
     EMAIL_BOT_EMAIL: str = Field(..., validation_alias="MAIL_USERNAME")
     EMAIL_BOT_PASSWORD: str = Field(..., validation_alias="MAIL_PASSWORD")
 
+    # 钉钉相关的配置
+    DINGTALK_CLIENT_ID: str = Field(..., validation_alias="DINGTALK_APP_KEY")
+    DINGTALK_CLIENT_SECRET: str = Field(..., validation_alias="DINGTALK_APP_SECRET")
+
+    # 前端和后端的域名
+    BACKEND_BASE_URL: str = Field("https://spearhead-copious-straggler.ngrok-free.dev",
+                                  validation_alias="BACKEND_BASE_URL")
+
     @computed_field  # @computed_field - Pydantic 专用装饰器
     # 作用：这是 Pydantic v2+ 引入的装饰器，用于在 Pydantic 模型中定义计算字段。
     # 专门为 Pydantic 模型设计

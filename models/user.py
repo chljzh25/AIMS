@@ -150,24 +150,11 @@ class DingdingUserModel(BaseModel):
     字段	                    用途
     union_id	                钉钉开放平台用户唯一标识
     open_id	                    企业内用户唯一标识
-    access_token	            访问令牌（2小时过期）
-    refresh_token	            刷新令牌（30天过期）
-    refresh_token_expire_at	    刷新令牌过期时间戳
-    设计考量：
-    一对一关联用户模型
-    存储OAuth令牌用于后续API调用
-    时间戳存储便于判断令牌是否过期
     """
     nick: Mapped[str] = mapped_column(String(100), nullable=False)
     union_id: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     open_id: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
     mobile: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
-    # access_token默认过期时间是2小时
-    access_token: Mapped[str] = mapped_column(String(255), nullable=False)
-    # refresh_token默认过期时间是30天
-    refresh_token: Mapped[str] = mapped_column(String(255), nullable=False)
-    # refresh_token的过期时间，保存的是时间戳
-    refresh_token_expire_at: Mapped[int] = mapped_column(Integer, nullable=False)
 
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), nullable=False)
     user: Mapped["UserModel"] = relationship(back_populates="dingding_user")

@@ -1,7 +1,7 @@
 from core.single import SingletonMeta
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
-from schemas.cache_schema import InviteInfoSchema
+from schemas.cache_schema import InviteInfoSchema, DingTalkTokenInfoSchema
 from settings import settings
 
 
@@ -10,6 +10,8 @@ from settings import settings
 class HRCache(metaclass=SingletonMeta):
     # 定义邀请相关的缓存键前缀
     invite_prefix = "invite:"
+    # 定义钉钉相关的缓存键前缀
+    dingtalk_prefix = "dingtalk:"
 
     # 初始化缓存后端，获取FastAPI缓存的Redis后端实例
     def __init__(self):
@@ -46,3 +48,14 @@ class HRCache(metaclass=SingletonMeta):
             invite_info = InviteInfoSchema.model_validate_json(invite_info_json)
             return invite_info
         return None
+
+    # 定义钉钉相关的缓存键前缀
+    async def set_dingtalk_info(self, dingtalk_info: DingTalkTokenInfoSchema):
+        key = f"{self.dingtalk_prefix}{dingtalk_info.user_id}"
+        await self.set(key, dingtalk_info.model_dump_json(), ex=60 * 60 * 24 * 29)
+
+    # 获取钉钉信息缓存，根据用户ID查询
+    async def get_dingtalk_info(self, user_id: str):
+        key = f"{self.dingtalk_prefix}{user_id}"
+        value = await self.get(key)
+        return DingTalkTokenInfoSchema.model_validate_json(value)

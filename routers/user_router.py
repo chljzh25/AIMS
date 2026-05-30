@@ -21,12 +21,22 @@ from repository.user_repo import UserRepo, DepartmentRepo
 from models.user import UserModel, UserStatus
 from fastapi.exceptions import HTTPException
 from fastapi import status
-from core.cache import HRCache, InviteInfoSchema
+from core.cache import HRCache, InviteInfoSchema, DingTalkTokenInfoSchema
 import string
 import random
 from tasks import send_invite_email_task
 from schemas import ResponseSchema
+from settings import settings
+from urllib.parse import urlencode, urljoin
+import httpx
+from core.dingtalk import DingTalkApi
+from fastapi.responses import RedirectResponse
+from fastapi import Request
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 
+# 全局模板引擎实例
+templates = Jinja2Templates(directory="templates")
 router = APIRouter(prefix="/user", tags=["user"])
 
 
@@ -191,3 +201,105 @@ async def department_list(
         department_repo = DepartmentRepo(session)
         departments = await department_repo.get_department_list()
         return {"departments": departments}
+
+
+# 获取登录钉钉的URL
+@router.get("/dingtalk/authorize", summary="获取登录钉钉的URL")
+async def dingtalk_authorize(
+        current_user: UserModel = Depends(get_current_user),
+):
+    # redirect_uri：必须是公网能够访问的url
+    redirect_uri = urljoin(settings.BACKEND_BASE_URL, "/user/dingtalk/callback")
+    params = {
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "client_id": settings.DINGTALK_CLIENT_ID,
+        "scope": "openid",
+        "state": current_user.id,
+        "prompt": "consent"
+    }
+    authorize_url = f"https://login.dingtalk.com/oauth2/auth?{urlencode(params)}"
+    return {"authorize_url": authorize_url}
+
+
+# 处理钉钉登录回调
+@router.get("/dingtalk/callback")
+async def dingtalk_callback(
+        state: str,
+        code: str | None = None,
+        authCode: str | None = None,
+        session: AsyncSession = Depends(get_session_instance),
+        cache: HRCache = Depends(get_cache_instance)
+):
+    user_id = state
+    async with httpx.AsyncClient() as client:
+        # 1. 获取token
+        token_resp = await client.post(
+            # 向钉钉API发送请求，使用授权码换取访问令牌
+            # 包含客户端ID、密钥和授权码等必要参数
+            url=DingTalkApi.build_access_token_url(),
+            json={
+                "clientId": settings.DINGTALK_CLIENT_ID,
+                "clientSecret": settings.DINGTALK_CLIENT_SECRET,
+                "code": authCode,
+                "grantType": "authorization_code"
+            }
+        )
+        if token_resp.status_code != 200:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="钉钉Token获取失败！")
+        token_data = token_resp.json()
+        access_token = token_data["accessToken"]
+        refresh_token = token_data["refreshToken"]
+        # 2. 存储token到缓存中
+        await cache.set_dingtalk_info(DingTalkTokenInfoSchema(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user_id=user_id
+        ))
+        # 3. 利用token调用钉钉API获取用户的基本信息
+        # 提取昵称(nick)、手机号(mobile)、开放ID(openId)和联合ID(unionId)
+        my_info_resp = await client.get(
+            url=DingTalkApi.build_get_my_info_url(),
+            headers={
+                "x-acs-dingtalk-access-token": access_token,
+            }
+        )
+        if my_info_resp.status_code != 200:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="钉钉个人信息获取失败！")
+        my_info = my_info_resp.json()
+        nick = my_info["nick"]
+        mobile = my_info["mobile"]
+        open_id = my_info["openId"]
+        union_id = my_info["unionId"]
+        # 4. 保存钉钉上用户的数据到数据库中
+        async with session.begin():
+            user_repo = UserRepo(session)
+            await user_repo.set_dingding_user(
+                user_id=user_id,
+                dingding_user_data={
+                    "nick": nick,
+                    "mobile": mobile,
+                    "open_id": open_id,
+                    "union_id": union_id,
+                }
+            )
+        # 5. 跳转到成功的页面
+        return RedirectResponse(f"/user/dingtalk/authorize/success?nick={nick}")
+
+
+# 处理钉钉授权成功页面的API端点，用于显示授权成功的信息给用户
+@router.get("/dingtalk/authorize/success")
+async def dingtalk_authorize_success(
+        nick: str,  # 用户昵称，从URL查询参数传入
+        request: Request,
+):
+    # 使用Jinja2模板引擎渲染HTML页面，
+    # 模板文件名为ding_authorize_success.html
+    # 向模板传递两个变量：
+    # username: 用户昵称，用于在页面上显示
+    # request: 请求对象，模板引擎需要它来处理请求上下文
+    return templates.TemplateResponse(
+        request,  # Request 对象
+        "ding_authorize_success.html",  # 模板名称
+        {"username": nick}  # 上下文数据（字典）
+    )
