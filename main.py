@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from routers.user_router import router as user_router
+from routers.position_router import router as position_router
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import redis.asyncio as aioredis  # 为现代 Redis 库更新的导入
@@ -49,6 +50,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 app.include_router(user_router)
+app.include_router(position_router)
 
 
 @app.get("/")
