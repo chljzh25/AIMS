@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     BACKEND_BASE_URL: str = Field("https://spearhead-copious-straggler.ngrok-free.dev",
                                   validation_alias="BACKEND_BASE_URL")
 
+    # 简历上传存储路径
+    RESUME_DIR: str = os.path.join(BASE_DIR, "upload")
+
     @computed_field  # @computed_field - Pydantic 专用装饰器
     # 作用：这是 Pydantic v2+ 引入的装饰器，用于在 Pydantic 模型中定义计算字段。
     # 专门为 Pydantic 模型设计
