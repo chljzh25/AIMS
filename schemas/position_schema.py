@@ -35,3 +35,7 @@ class PositionSchema(PositionBaseSchema):
 
 class PositionRespSchema(BaseModel):
     position: PositionSchema | None
+
+
+class PositionListRespSchema(BaseModel):
+    positions: List[PositionSchema]
